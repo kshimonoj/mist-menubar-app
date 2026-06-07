@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mist</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Dashboard view -->
+      <section id="dashboard" class="view">
+        <header class="topbar">
+          <div class="scope">
+            <span id="scope-label">Mist</span>
+          </div>
+          <div class="topbar-actions">
+            <select id="scope-select" title="Scope"></select>
+            <button id="btn-refresh" class="icon-btn" title="Refresh">&#x21bb;</button>
+            <button id="btn-settings" class="icon-btn" title="Settings">&#x2699;</button>
+          </div>
+        </header>
+
+        <div id="needs-setup" class="needs-setup hidden">
+          <p>Not configured yet.</p>
+          <button id="btn-open-settings" class="primary">Open Settings</button>
+        </div>
+
+        <div id="content" class="content">
+          <!-- SLE -->
+          <div class="card">
+            <div class="sle-head">
+              <div class="card-title">SLE</div>
+              <div class="sle-tabs" id="sle-tabs">
+                <button class="sle-tab active" data-tab="wireless">Wireless</button>
+                <button class="sle-tab" data-tab="wired">Wired</button>
+                <button class="sle-tab" data-tab="wan">WAN</button>
+              </div>
+            </div>
+            <div class="sle-list" id="sle-list">
+              <div class="sle-empty">--</div>
+            </div>
+          </div>
+
+          <!-- Devices -->
+          <div class="card">
+            <div class="card-title">Devices</div>
+            <div class="dev-row" data-key="ap">
+              <span class="dev-name">AP</span>
+              <span class="dev-val">--</span>
+            </div>
+            <div class="dev-row" data-key="switch">
+              <span class="dev-name">Switch</span>
+              <span class="dev-val">--</span>
+            </div>
+            <div class="dev-row" data-key="gateway">
+              <span class="dev-name">Gateway</span>
+              <span class="dev-val">--</span>
+            </div>
+          </div>
+
+          <!-- Clients -->
+          <div class="card">
+            <div class="card-title">Clients</div>
+            <div class="dev-row" data-key="wireless-clients">
+              <span class="dev-name">Wireless</span>
+              <span class="dev-val">--</span>
+            </div>
+            <div class="dev-row" data-key="wired-clients">
+              <span class="dev-name">Wired</span>
+              <span class="dev-val">--</span>
+            </div>
+          </div>
+
+          <!-- Alerts -->
+          <div class="card">
+            <div class="card-title">Alerts (24h)</div>
+            <div class="dev-row" data-key="alarms">
+              <span class="dev-name">Active</span>
+              <span class="dev-val" id="alarms-total">--</span>
+            </div>
+            <div id="alarms-breakdown" class="breakdown"></div>
+          </div>
+        </div>
+
+        <footer class="footer">
+          <button id="btn-open-dashboard" class="link-btn">Open Mist Dashboard &#x2197;</button>
+          <span id="last-updated" class="muted">—</span>
+        </footer>
+      </section>
+
+      <!-- Settings view -->
+      <section id="settings" class="view hidden">
+        <header class="topbar">
+          <div class="scope"><span>Settings</span></div>
+          <div class="topbar-actions">
+            <button id="btn-back" class="icon-btn" title="Back">&#x2715;</button>
+          </div>
+        </header>
+
+        <div class="content">
+          <div class="card">
+            <label class="field">
+              <span>Cluster (API host)</span>
+              <select id="cfg-cluster"></select>
+            </label>
+            <label class="field hidden" id="custom-host-field">
+              <span>Custom host</span>
+              <input id="cfg-custom-host" type="text" placeholder="api.example.mist.com" />
+            </label>
+            <label class="field">
+              <span>API Token</span>
+              <input id="cfg-token" type="password" placeholder="Paste Mist API token" />
+            </label>
+            <button id="btn-test" class="primary">Test Connection</button>
+            <div id="test-result" class="test-result"></div>
+          </div>
+
+          <div class="card">
+            <label class="field">
+              <span>Organization</span>
+              <select id="cfg-org"></select>
+            </label>
+            <label class="field">
+              <span>Site (optional)</span>
+              <select id="cfg-site"></select>
+            </label>
+            <label class="field">
+              <span>Refresh interval</span>
+              <select id="cfg-interval">
+                <option value="30">30 seconds</option>
+                <option value="60" selected>60 seconds</option>
+                <option value="300">5 minutes</option>
+              </select>
+            </label>
+          </div>
+
+          <button id="btn-save" class="primary block">Save</button>
+          <div id="save-result" class="test-result"></div>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
