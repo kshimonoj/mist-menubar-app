@@ -20,6 +20,35 @@ pub struct SiteSleData {
     pub wan: Vec<SleMetric>,
 }
 
+/// A single alarm row, summarized from an alarm search result.
+#[derive(Serialize, Clone)]
+pub struct AlarmItem {
+    pub severity: String,    // "critical" / "warn" / "info"
+    pub alarm_type: String,  // "device_down" etc.
+    pub display: String,     // friendly display name (mapping or type itself)
+    pub text: Option<String>, // summary text, when present
+    pub count: u64,          // number of occurrences
+    pub timestamp: i64,      // epoch seconds
+}
+
+/// Map an alarm `type` key to a friendly display name. Falls back to the raw
+/// type for unmapped alarm kinds.
+fn alarm_display(alarm_type: &str) -> String {
+    match alarm_type {
+        "device_down" => "AP offline",
+        "switch_down" => "Switch offline",
+        "gateway_down" => "WAN Edge offline",
+        "infra_dhcp_failure" => "DHCP Failure",
+        "infra_dns_failure" => "DNS Failure",
+        "infra_arp_failure" => "ARP Failure",
+        "missing_vlan" => "Missing VLAN",
+        "bad_cable" => "Bad cable",
+        "ap_offline" => "AP Offline (Marvis)",
+        other => other,
+    }
+    .to_string()
+}
+
 /// Definition of one SLE metric: which category it belongs to, its display
 /// name, and the API key(s) to try (first is primary, rest are fallbacks for
 /// the singular/plural / renamed variants Mist uses across versions).
@@ -373,8 +402,8 @@ impl MistClient {
     // ---- Alarms ----
     async fn alarms(&self, site_id: Option<&str>, org_id: &str) -> Value {
         let path = match site_id {
-            Some(sid) => format!("/sites/{sid}/alarms/search?duration=1d&limit=100"),
-            None => format!("/orgs/{org_id}/alarms/search?duration=1d&limit=100"),
+            Some(sid) => format!("/sites/{sid}/alarms/search?duration=7d&limit=100"),
+            None => format!("/orgs/{org_id}/alarms/search?duration=7d&limit=100"),
         };
         let v = match self.get_opt(&path).await {
             Some(v) => v,
@@ -388,17 +417,52 @@ impl MistClient {
             .unwrap_or(0);
 
         let mut sev: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
+        let mut items: Vec<AlarmItem> = Vec::new();
         if let Some(arr) = results {
             for a in arr {
-                let s = a
+                let severity = a
                     .get("severity")
                     .and_then(|x| x.as_str())
                     .unwrap_or("info")
                     .to_lowercase();
-                *sev.entry(s).or_insert(0) += 1;
+                *sev.entry(severity.clone()).or_insert(0) += 1;
+
+                let alarm_type = a
+                    .get("type")
+                    .and_then(|x| x.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+
+                // Prefer explicit `text`; otherwise build a hint from hostnames.
+                let text = a
+                    .get("text")
+                    .and_then(|x| x.as_str())
+                    .map(|s| s.to_string())
+                    .or_else(|| {
+                        a.get("hostnames")
+                            .and_then(|h| h.as_array())
+                            .map(|arr| {
+                                arr.iter()
+                                    .filter_map(|x| x.as_str())
+                                    .collect::<Vec<_>>()
+                                    .join(", ")
+                            })
+                            .filter(|s| !s.is_empty())
+                    });
+
+                items.push(AlarmItem {
+                    display: alarm_display(&alarm_type),
+                    severity,
+                    alarm_type,
+                    text,
+                    count: a.get("count").and_then(|x| x.as_u64()).unwrap_or(1),
+                    timestamp: a.get("timestamp").and_then(|x| x.as_i64()).unwrap_or(0),
+                });
             }
         }
-        json!({ "total": total, "severities": sev })
+        // Newest first.
+        items.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        json!({ "total": total, "severities": sev, "items": items })
     }
 
     pub fn dashboard_url(host: &str, org_id: &str, site_id: Option<&str>) -> String {

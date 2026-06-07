@@ -181,30 +181,83 @@ function setClients(key, n) {
   }
 }
 
+const MAX_ALARMS = 10;
+
+function sevIcon(severity) {
+  switch ((severity || "").toLowerCase()) {
+    case "critical":
+      return "🔴";
+    case "warn":
+    case "warning":
+      return "🟡";
+    default:
+      return "🔵";
+  }
+}
+
 function renderAlarms(alarms) {
   const totalEl = $("#alarms-total");
-  const bd = $("#alarms-breakdown");
-  bd.innerHTML = "";
+  const list = $("#alarms-list");
+  list.innerHTML = "";
+
   if (!alarms) {
     totalEl.textContent = "N/A";
     totalEl.className = "dev-val c-gray";
     return;
   }
+
   const total = alarms.total ?? 0;
   const sev = alarms.severities || {};
-  const crit = (sev.critical || 0);
+  const crit = sev.critical || 0;
   const warn = (sev.warn || 0) + (sev.warning || 0);
   let cls = "c-green";
   if (crit > 0) cls = "c-red";
   else if (warn > 0) cls = "c-orange";
   totalEl.textContent = String(total);
   totalEl.className = "dev-val " + cls;
-  for (const [k, v] of Object.entries(sev)) {
-    if (!v) continue;
-    const chip = document.createElement("span");
-    chip.className = "sev-chip";
-    chip.textContent = `${k}: ${v}`;
-    bd.appendChild(chip);
+
+  const items = Array.isArray(alarms.items) ? alarms.items : [];
+  if (!items.length) {
+    const empty = document.createElement("div");
+    empty.className = "alarms-empty c-green";
+    empty.textContent = "No alerts";
+    list.appendChild(empty);
+    return;
+  }
+
+  for (const a of items.slice(0, MAX_ALARMS)) {
+    const row = document.createElement("div");
+    row.className = "alarm-row";
+
+    const head = document.createElement("div");
+    head.className = "alarm-head";
+
+    const label = document.createElement("span");
+    label.className = "alarm-label";
+    label.textContent = `${sevIcon(a.severity)} ${a.display || a.alarm_type || "Alert"}`;
+
+    const count = document.createElement("span");
+    count.className = "alarm-count";
+    if (a.count && a.count > 1) count.textContent = String(a.count);
+
+    head.appendChild(label);
+    head.appendChild(count);
+    row.appendChild(head);
+
+    if (a.text) {
+      const txt = document.createElement("div");
+      txt.className = "alarm-text";
+      txt.textContent = a.text;
+      row.appendChild(txt);
+    }
+    list.appendChild(row);
+  }
+
+  if (items.length > MAX_ALARMS) {
+    const more = document.createElement("div");
+    more.className = "alarm-more";
+    more.textContent = `+ ${items.length - MAX_ALARMS} more`;
+    list.appendChild(more);
   }
 }
 

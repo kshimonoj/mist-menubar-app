@@ -74,12 +74,11 @@
 
           <!-- Alerts -->
           <div class="card">
-            <div class="card-title">Alerts (24h)</div>
-            <div class="dev-row" data-key="alarms">
-              <span class="dev-name">Active</span>
+            <div class="alerts-head">
+              <div class="card-title">Alerts (7D)</div>
               <span class="dev-val" id="alarms-total">--</span>
             </div>
-            <div id="alarms-breakdown" class="breakdown"></div>
+            <div id="alarms-list" class="alarms-list"></div>
           </div>
         </div>
 
@@ -129,8 +128,9 @@
               <span>Refresh interval</span>
               <select id="cfg-interval">
                 <option value="30">30 seconds</option>
-                <option value="60" selected>60 seconds</option>
+                <option value="60" selected>1 minute</option>
                 <option value="300">5 minutes</option>
+                <option value="3600">60 minutes</option>
               </select>
             </label>
           </div>
